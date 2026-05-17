@@ -1,0 +1,209 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+  schemas   = ["couple_court"]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  loginId      String   @unique
+  inviteCode   String?  @unique
+  passwordHash String
+  nickname     String
+  avatar       String
+  createdAt    DateTime @default(now())
+
+  coupleAsUserA   Couple?          @relation("CoupleUserA")
+  coupleAsUserB   Couple?          @relation("CoupleUserB")
+  plaintiffCases  Case[]           @relation("CasePlaintiff")
+  defendantCases  Case[]           @relation("CaseDefendant")
+  votes           Vote[]
+  verdicts        SentenceRecord[]
+  reportsMade     Report[]         @relation("Reporter")
+  reportsTargeted Report[]         @relation("ReportTargetUser")
+  blocking        Block[]          @relation("Blocker")
+  blockedBy       Block[]          @relation("Blocked")
+  notifications   Notification[]
+  comments        CaseComment[]
+
+  @@schema("couple_court")
+}
+
+model Couple {
+  id         String   @id @default(cuid())
+  userAId    String   @unique
+  userBId    String?  @unique
+  inviteCode String   @unique
+  status     String   @default("PENDING")
+  createdAt  DateTime @default(now())
+
+  userA User   @relation("CoupleUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB User?  @relation("CoupleUserB", fields: [userBId], references: [id], onDelete: SetNull)
+  cases Case[]
+
+  @@schema("couple_court")
+}
+
+model Case {
+  id                      String    @id @default(cuid())
+  plaintiffId             String
+  defendantId             String?
+  coupleId                String?
+  title                   String
+  category                String
+  plaintiffStatement      String
+  defendantStatement      String?
+  defendantResponseSource String?
+  caseImages              String    @default("[]")
+  aiSummary               String
+  aiPlaintiffSummary      String
+  aiDefendantSummary      String
+  aiIssues                String
+  aiWarning               String
+  voteDeadlineAt          DateTime
+  status                  String    @default("OPEN")
+  maxJurors               Int       @default(100)
+  viewCount               Int       @default(0)
+  adminHidden             Boolean   @default(false)
+  responseRequestedAt     DateTime?
+  responseSubmittedAt     DateTime?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  plaintiff User             @relation("CasePlaintiff", fields: [plaintiffId], references: [id], onDelete: Cascade)
+  defendant User?            @relation("CaseDefendant", fields: [defendantId], references: [id], onDelete: SetNull)
+  couple    Couple?          @relation(fields: [coupleId], references: [id], onDelete: SetNull)
+  votes     Vote[]
+  verdict   Verdict?
+  reports   Report[]
+  records   SentenceRecord[]
+  comments  CaseComment[]
+
+  @@index([status, voteDeadlineAt])
+  @@index([plaintiffId])
+  @@schema("couple_court")
+}
+
+model Vote {
+  id             String   @id @default(cuid())
+  caseId         String
+  userId         String
+  verdict        String
+  sentenceMonths Int
+  sentenceLabel  String
+  comment        String?
+  createdAt      DateTime @default(now())
+
+  case Case @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([caseId, userId])
+  @@index([userId])
+  @@schema("couple_court")
+}
+
+model Verdict {
+  id                 String   @id @default(cuid())
+  caseId             String   @unique
+  finalVerdict       String
+  sentenceMonths     Int
+  sentenceLabel      String
+  voteSummary        String
+  aiVerdictText      String
+  reductionMissions  String
+  reflectedToProfile Boolean  @default(false)
+  createdAt          DateTime @default(now())
+
+  case Case @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@schema("couple_court")
+}
+
+model CaseComment {
+  id        String   @id @default(cuid())
+  caseId    String
+  userId    String
+  parentId  String?
+  body      String
+  createdAt DateTime @default(now())
+
+  case    Case          @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent  CaseComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies CaseComment[] @relation("CommentReplies")
+
+  @@index([caseId, createdAt])
+  @@index([parentId, createdAt])
+  @@index([userId])
+  @@schema("couple_court")
+}
+
+model SentenceRecord {
+  id              String   @id @default(cuid())
+  userId          String
+  caseId          String
+  title           String
+  sentenceMonths  Int
+  sentenceLabel   String
+  remainingMonths Int
+  status          String   @default("ACTIVE")
+  createdAt       DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  case Case @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@schema("couple_court")
+}
+
+model Report {
+  id           String   @id @default(cuid())
+  reporterId   String
+  caseId       String?
+  targetUserId String?
+  reason       String
+  detail       String?
+  status       String   @default("OPEN")
+  createdAt    DateTime @default(now())
+
+  reporter   User  @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  case       Case? @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  targetUser User? @relation("ReportTargetUser", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@schema("couple_court")
+}
+
+model Block {
+  id            String   @id @default(cuid())
+  blockerId     String
+  blockedUserId String
+  createdAt     DateTime @default(now())
+
+  blocker     User @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedUser User @relation("Blocked", fields: [blockedUserId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedUserId])
+  @@schema("couple_court")
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  body      String
+  actionUrl String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+  @@schema("couple_court")
+}
