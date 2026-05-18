@@ -1,6 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import bcrypt from "bcryptjs";
@@ -47,6 +48,127 @@ const CASE_IMAGE_TYPES: Record<string, string> = {
   "image/webp": "webp",
   "image/gif": "gif"
 };
+const SIGNUP_GENDERS = ["여성", "남성", "기타"] as const;
+
+class UploadStorageError extends Error {
+  constructor() {
+    super("UPLOAD_STORAGE_NOT_CONFIGURED");
+  }
+}
+
+function getS3Config() {
+  const region = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION;
+  const bucket = process.env.S3_BUCKET || process.env.AWS_S3_BUCKET;
+  const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+  const publicBaseUrl = process.env.S3_PUBLIC_BASE_URL || process.env.AWS_S3_PUBLIC_URL;
+  const sessionToken = process.env.AWS_SESSION_TOKEN;
+
+  if (!region || !bucket || !accessKeyId || !secretAccessKey) return null;
+
+  return {
+    region,
+    bucket,
+    accessKeyId,
+    secretAccessKey,
+    sessionToken,
+    publicBaseUrl: publicBaseUrl?.replace(/\/+$/, "")
+  };
+}
+
+function hashHex(input: Buffer | string) {
+  return createHash("sha256").update(input).digest("hex");
+}
+
+function hmac(key: Buffer | string, value: string) {
+  return createHmac("sha256", key).update(value).digest();
+}
+
+function encodeS3Key(key: string) {
+  return key.split("/").map(encodeURIComponent).join("/");
+}
+
+async function uploadToS3(bytes: Buffer, contentType: string, folder: "cases" | "profiles", extension: string) {
+  const config = getS3Config();
+  if (!config) return null;
+
+  const key = `couple-court/${folder}/${Date.now()}-${randomUUID()}.${extension}`;
+  const encodedKey = encodeS3Key(key);
+  const usePathStyle = config.bucket.includes(".");
+  const host = usePathStyle ? `s3.${config.region}.amazonaws.com` : `${config.bucket}.s3.${config.region}.amazonaws.com`;
+  const canonicalUri = usePathStyle ? `/${encodeURIComponent(config.bucket)}/${encodedKey}` : `/${encodedKey}`;
+  const url = `https://${host}${canonicalUri}`;
+  const now = new Date();
+  const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "");
+  const dateStamp = amzDate.slice(0, 8);
+  const payloadHash = hashHex(bytes);
+  const credentialScope = `${dateStamp}/${config.region}/s3/aws4_request`;
+  const headersToSign: Record<string, string> = {
+    "content-type": contentType,
+    host,
+    "x-amz-content-sha256": payloadHash,
+    "x-amz-date": amzDate
+  };
+
+  if (config.sessionToken) {
+    headersToSign["x-amz-security-token"] = config.sessionToken;
+  }
+
+  const signedHeaderNames = Object.keys(headersToSign).sort();
+  const canonicalHeaders = signedHeaderNames.map((name) => `${name}:${headersToSign[name]}\n`).join("");
+  const signedHeaders = signedHeaderNames.join(";");
+  const canonicalRequest = ["PUT", canonicalUri, "", canonicalHeaders, signedHeaders, payloadHash].join("\n");
+  const stringToSign = ["AWS4-HMAC-SHA256", amzDate, credentialScope, hashHex(canonicalRequest)].join("\n");
+  const dateKey = hmac(`AWS4${config.secretAccessKey}`, dateStamp);
+  const regionKey = hmac(dateKey, config.region);
+  const serviceKey = hmac(regionKey, "s3");
+  const signingKey = hmac(serviceKey, "aws4_request");
+  const signature = createHmac("sha256", signingKey).update(stringToSign).digest("hex");
+  const authorization = `AWS4-HMAC-SHA256 Credential=${config.accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+  const requestHeaders: Record<string, string> = {
+    "content-type": contentType,
+    "x-amz-content-sha256": payloadHash,
+    "x-amz-date": amzDate,
+    authorization
+  };
+
+  if (config.sessionToken) {
+    requestHeaders["x-amz-security-token"] = config.sessionToken;
+  }
+
+  const body = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+  const response = await fetch(url, {
+    method: "PUT",
+    headers: requestHeaders,
+    body
+  });
+
+  if (!response.ok) {
+    throw new Error(`S3_UPLOAD_FAILED_${response.status}`);
+  }
+
+  if (config.publicBaseUrl) {
+    return `${config.publicBaseUrl}/${encodedKey}`;
+  }
+
+  return usePathStyle ? `https://${host}/${encodeURIComponent(config.bucket)}/${encodedKey}` : `https://${host}/${encodedKey}`;
+}
+
+async function saveUploadedImage(file: File, folder: "cases" | "profiles", extension: string) {
+  const bytes = Buffer.from(await file.arrayBuffer());
+  const s3Url = await uploadToS3(bytes, file.type, folder, extension);
+  if (s3Url) return s3Url;
+
+  if (process.env.NODE_ENV === "production" || process.env.VERCEL === "1") {
+    throw new UploadStorageError();
+  }
+
+  const uploadDir = path.join(process.cwd(), "public", "uploads", folder);
+  await mkdir(uploadDir, { recursive: true });
+  const fileName = `${Date.now()}-${randomUUID()}.${extension}`;
+  await writeFile(path.join(uploadDir, fileName), bytes);
+  return `/uploads/${folder}/${fileName}`;
+}
 
 function caseImageFiles(formData: FormData) {
   return formData
@@ -75,16 +197,17 @@ async function saveCaseImages(files: File[]) {
 
   if (!files.length) return [];
 
-  const uploadDir = path.join(process.cwd(), "public", "uploads", "cases");
-  await mkdir(uploadDir, { recursive: true });
-
   const urls: string[] = [];
   for (const file of files) {
     const extension = CASE_IMAGE_TYPES[file.type];
-    const fileName = `${Date.now()}-${randomUUID()}.${extension}`;
-    const bytes = Buffer.from(await file.arrayBuffer());
-    await writeFile(path.join(uploadDir, fileName), bytes);
-    urls.push(`/uploads/cases/${fileName}`);
+    try {
+      urls.push(await saveUploadedImage(file, "cases", extension));
+    } catch (error) {
+      if (error instanceof UploadStorageError) {
+        redirect("/cases/new?error=imageUpload");
+      }
+      throw error;
+    }
   }
 
   return urls;
@@ -98,13 +221,14 @@ async function saveProfileImage(file: File | null) {
     redirect("/signup?error=avatar");
   }
 
-  const uploadDir = path.join(process.cwd(), "public", "uploads", "profiles");
-  await mkdir(uploadDir, { recursive: true });
-
-  const fileName = `${Date.now()}-${randomUUID()}.${extension}`;
-  const bytes = Buffer.from(await file.arrayBuffer());
-  await writeFile(path.join(uploadDir, fileName), bytes);
-  return `/uploads/profiles/${fileName}`;
+  try {
+    return await saveUploadedImage(file, "profiles", extension);
+  } catch (error) {
+    if (error instanceof UploadStorageError) {
+      redirect("/signup?error=upload");
+    }
+    throw error;
+  }
 }
 
 export async function signup(formData: FormData) {
@@ -112,8 +236,28 @@ export async function signup(formData: FormData) {
   const password = field(formData, "password");
   const nickname = field(formData, "nickname");
   const selectedAvatar = field(formData, "avatar") || AVATAR_OPTIONS[0];
+  const realName = field(formData, "realName");
+  const gender = field(formData, "gender");
+  const birthday = field(formData, "birthday");
+  const birthYearValue = field(formData, "birthYear");
+  const birthYear = Number(birthYearValue);
+  const phoneNumber = field(formData, "phoneNumber");
+  const currentYear = new Date().getFullYear();
 
-  if (!loginId || !password || !nickname) {
+  if (
+    !loginId ||
+    !password ||
+    !nickname ||
+    !realName ||
+    !gender ||
+    !birthday ||
+    !birthYearValue ||
+    !phoneNumber
+  ) {
+    redirect("/signup?error=required");
+  }
+
+  if (!SIGNUP_GENDERS.includes(gender as (typeof SIGNUP_GENDERS)[number]) || !Number.isInteger(birthYear) || birthYear < 1900 || birthYear > currentYear) {
     redirect("/signup?error=required");
   }
 
@@ -132,7 +276,7 @@ export async function signup(formData: FormData) {
   const uploadedAvatar = await saveProfileImage(singleImageFile(formData, "avatarUpload"));
   const avatar = uploadedAvatar || selectedAvatar;
   const user = await db.user.create({
-    data: { loginId, inviteCode, passwordHash, nickname, avatar }
+    data: { loginId, inviteCode, passwordHash, nickname, avatar, realName, gender, birthday, birthYear, phoneNumber }
   });
 
   await setSessionCookie(user.id);

@@ -8,8 +8,8 @@ export function parseCaseImages(raw: string | null | undefined) {
     return parsed.filter(
       (image): image is string =>
         typeof image === "string" &&
-        image.startsWith("/uploads/cases/") &&
-        image.length < 240
+        image.length < 800 &&
+        (image.startsWith("/uploads/cases/") || image.startsWith("https://"))
     );
   } catch {
     return [];

@@ -12,7 +12,8 @@ const errors: Record<string, string> = {
   deadline: "투표 시간을 다시 선택하세요.",
   imageCount: "사건 사진은 최대 3장까지 첨부할 수 있어요.",
   imageType: "JPG, PNG, WEBP, GIF 이미지만 첨부할 수 있어요.",
-  imageSize: "사진은 한 장당 최대 4MB까지 첨부할 수 있어요."
+  imageSize: "사진은 한 장당 최대 4MB까지 첨부할 수 있어요.",
+  imageUpload: "사진 업로드 저장소 설정이 필요해요."
 };
 
 export default async function NewCasePage({

@@ -16,6 +16,11 @@ model User {
   passwordHash String
   nickname     String
   avatar       String
+  realName     String?
+  gender       String?
+  birthday     String?
+  birthYear    Int?
+  phoneNumber  String?
   createdAt    DateTime @default(now())
 
   coupleAsUserA   Couple?          @relation("CoupleUserA")
