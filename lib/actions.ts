@@ -8,6 +8,7 @@ import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { generateCaseSummary } from "@/lib/ai";
+import { getDefaultCaseImage } from "@/lib/case-images";
 import {
   AVATAR_OPTIONS,
   CASE_COMMENT_MAX_LENGTH,
@@ -151,6 +152,14 @@ async function uploadToS3(bytes: Buffer, contentType: string, folder: "cases" | 
     return `${config.publicBaseUrl}/${encodedKey}`;
   }
 
+  if (folder === "cases") {
+    return `/api/case-images/${encodedKey}`;
+  }
+
+  if (folder === "profiles") {
+    return `/api/profile-images/${encodedKey}`;
+  }
+
   return usePathStyle ? `https://${host}/${encodeURIComponent(config.bucket)}/${encodedKey}` : `https://${host}/${encodedKey}`;
 }
 
@@ -213,19 +222,23 @@ async function saveCaseImages(files: File[]) {
   return urls;
 }
 
-async function saveProfileImage(file: File | null) {
+async function saveProfileImage(
+  file: File | null,
+  invalidRedirect = "/signup?error=avatar",
+  uploadRedirect = "/signup?error=upload"
+) {
   if (!file) return null;
 
   const extension = CASE_IMAGE_TYPES[file.type];
   if (!extension || file.size > PROFILE_IMAGE_MAX_BYTES) {
-    redirect("/signup?error=avatar");
+    redirect(invalidRedirect);
   }
 
   try {
     return await saveUploadedImage(file, "profiles", extension);
   } catch (error) {
     if (error instanceof UploadStorageError) {
-      redirect("/signup?error=upload");
+      redirect(uploadRedirect);
     }
     throw error;
   }
@@ -281,6 +294,35 @@ export async function signup(formData: FormData) {
 
   await setSessionCookie(user.id);
   redirect("/home");
+}
+
+export async function updateMyProfile(formData: FormData) {
+  const user = await requireUser();
+  const nickname = field(formData, "nickname");
+
+  if (!nickname || nickname.length > 20) {
+    redirect("/me?profileError=nickname");
+  }
+
+  const uploadedAvatar = await saveProfileImage(
+    singleImageFile(formData, "avatarUpload"),
+    "/me?profileError=avatar",
+    "/me?profileError=upload"
+  );
+
+  await getPrisma().user.update({
+    where: { id: user.id },
+    data: {
+      nickname,
+      ...(uploadedAvatar ? { avatar: uploadedAvatar } : {})
+    }
+  });
+
+  revalidatePath("/me");
+  revalidatePath("/home");
+  revalidatePath("/activity");
+  revalidatePath("/cases");
+  redirect("/me?profile=updated");
 }
 
 export async function login(formData: FormData) {
@@ -396,13 +438,13 @@ export async function connectCouple(formData: FormData) {
       {
         userId: targetUser.id,
         type: "COUPLE_CONNECTED",
-        title: "커플 법정이 열렸어요",
+        title: "커플 재판이 열렸어요",
         body: `${user.nickname}님과 커플 연결이 완료됐습니다.`
       },
       {
         userId: user.id,
         type: "COUPLE_CONNECTED",
-        title: "커플 법정이 열렸어요",
+        title: "커플 재판이 열렸어요",
         body: "상대방 초대코드로 커플 연결이 완료됐습니다."
       }
     ]
@@ -457,7 +499,8 @@ export async function createCase(formData: FormData) {
     redirect("/couple?from=case");
   }
 
-  const imageUrls = await saveCaseImages(caseImageFiles(formData));
+  const uploadedImageUrls = await saveCaseImages(caseImageFiles(formData));
+  const imageUrls = uploadedImageUrls.length ? uploadedImageUrls : [getDefaultCaseImage(category)];
 
   const summary = generateCaseSummary({
     title,

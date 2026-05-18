@@ -23,7 +23,7 @@ export default async function LoginPage({
         <BackButton href="/" />
         <Link href="/" className="inline-flex min-h-8 items-center gap-1.5 text-[20px] font-black text-neutral-950">
           <LogoMark size="sm" />
-          커플법정
+          커플재판
         </Link>
       </div>
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, MessageSquareReply } from "lucide-react";
+import { MessageSquareReply } from "lucide-react";
+import { AppHeader } from "@/components/AppHeader";
 import { FormInput } from "@/components/FormInput";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -40,18 +41,8 @@ export default async function DefendantResponsePage({
   const alreadySubmitted = caseItem.status !== "PENDING_DEFENDANT";
 
   return (
-    <div className="py-4">
-      <div className="grid min-h-10 grid-cols-[36px_1fr_36px] items-center gap-1.5">
-        <Link
-          href={`/cases/${caseItem.id}`}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-neutral-950"
-          aria-label="뒤로가기"
-        >
-          <ArrowLeft aria-hidden="true" size={20} strokeWidth={2.6} />
-        </Link>
-        <h1 className="text-center text-[18px] font-black text-neutral-950">피고 답변</h1>
-        <span />
-      </div>
+    <div>
+      <AppHeader title="피고 답변" backHref={`/cases/${caseItem.id}`} />
 
       <section className="pt-5">
         <span className="inline-flex h-12 w-12 items-center justify-center rounded-[18px] bg-[#FFF2EC] text-[#FF3D00]">

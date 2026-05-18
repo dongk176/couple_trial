@@ -1,6 +1,6 @@
-# 커플법정 웹앱 MVP
+# 커플재판 웹앱 MVP
 
-커플법정은 공개 연애 사건을 읽고 배심원으로 투표한 뒤, 투표가 종료되면 AI mock 판결문과 형량을 생성하는 모바일 우선 웹앱 MVP입니다. 네이티브 앱, React Native, Expo, Flutter를 사용하지 않았고 Next.js App Router 기반 웹앱으로 구현했습니다.
+커플재판은 공개 연애 사건을 읽고 배심원으로 투표한 뒤, 투표가 종료되면 AI mock 판결문과 형량을 생성하는 모바일 우선 웹앱 MVP입니다. 네이티브 앱, React Native, Expo, Flutter를 사용하지 않았고 Next.js App Router 기반 웹앱으로 구현했습니다.
 
 ## 기술 스택
 
@@ -22,7 +22,7 @@ npx prisma db seed
 npm run dev
 ```
 
-환경 변수는 `bogopa_mvp`와 같은 변수명을 사용합니다. 현재 워크스페이스의 `.env`는 `/Users/gimdongmin/bogopa_mvp/.env.local`에서 복사되어 있으며, Prisma는 Supabase Postgres의 `couple_court` schema만 사용합니다. `public` schema에는 커플법정 테이블을 만들지 않습니다.
+환경 변수는 `bogopa_mvp`와 같은 변수명을 사용합니다. 현재 워크스페이스의 `.env`는 `/Users/gimdongmin/bogopa_mvp/.env.local`에서 복사되어 있으며, Prisma는 Supabase Postgres의 `couple_court` schema만 사용합니다. `public` schema에는 커플재판 테이블을 만들지 않습니다.
 
 ```bash
 cp /Users/gimdongmin/bogopa_mvp/.env.local .env
@@ -56,6 +56,19 @@ cp /Users/gimdongmin/bogopa_mvp/.env.local .env
 - 징역 프로필, 배심 배지, 활동 기록
 - 알림 목록과 모두 읽음
 - ADMIN_SECRET 기반 간단 관리자 신고 처리
+
+## iOS 1.0 심사용 안전 경로
+
+App Store 1차 심사용 WKWebView는 전체 웹앱이 아니라 아래 읽기 전용 경로를 시작 URL로 사용합니다.
+
+- 시작 URL: `/ios-review`
+- 공개 사건 읽기 전용: `/ios-review/cases`
+- 판결 결과 예시: `/ios-review/verdict`
+- 개인정보 처리방침: `/privacy`
+- 고객지원: `/support`
+- 이용약관: `/terms`
+
+iOS 1.0 심사용 경로에서는 카메라 촬영, 사진 업로드, 댓글/답글, 사건 등록, 구독/IAP, 푸시 알림, 외부 AI 개인정보 전송, 사용자 추적을 제공하지 않습니다. 회원가입을 `?ios_review=1`로 열 경우 프로필 파일 업로드 입력도 숨깁니다.
 
 ## 데이터베이스
 

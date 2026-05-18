@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, Clock, Scale, Users } from "lucide-react";
 import { ViewCountIcon } from "@/components/ViewCountIcon";
-import { parseCaseImages } from "@/lib/case-images";
+import { getCaseImages } from "@/lib/case-images";
 import { deadlineLabel } from "@/lib/format";
 
 type CaseCardItem = {
@@ -72,6 +72,7 @@ function CaseCoverImage({
           alt={`${title} 사건 사진`}
           fill
           sizes="(max-width: 430px) 100vw, 430px"
+          unoptimized={image.startsWith("/api/case-images/")}
           className="object-cover"
         />
       ) : (
@@ -92,7 +93,7 @@ export function CaseCard({
 }) {
   const voteCount = caseItem._count.votes;
   const closed = caseItem.status !== "OPEN";
-  const images = parseCaseImages(caseItem.caseImages);
+  const images = getCaseImages(caseItem.caseImages, caseItem.category);
   const coverImage = images[0];
   const finalVerdict = caseItem.verdict?.finalVerdict || "판결 진행중";
   const hasFinalVerdict = Boolean(caseItem.verdict?.finalVerdict);

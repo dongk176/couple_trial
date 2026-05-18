@@ -15,7 +15,7 @@ export function LogoMark({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
     >
       <Image
         src="/logo/couple_trial.png"
-        alt="커플법정 로고"
+        alt="커플재판 로고"
         width={dimension}
         height={dimension}
         priority={size === "lg"}

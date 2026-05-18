@@ -10,6 +10,10 @@ import { createCase } from "@/lib/actions";
 type ResponseMode = "request" | "direct";
 type VoteDuration = "1" | "6" | "12" | "24";
 
+const CASE_IMAGE_LIMIT = 3;
+const CASE_IMAGE_MAX_BYTES = 4 * 1024 * 1024;
+const CASE_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+
 const voteDurationOptions: Array<{
   value: VoteDuration;
   label: string;
@@ -52,6 +56,7 @@ export function CaseCreateForm({
   const [responseMode, setResponseMode] = useState<ResponseMode>("request");
   const [noticeMode, setNoticeMode] = useState<ResponseMode | null>(null);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [imageError, setImageError] = useState("");
   const [voteDuration, setVoteDuration] = useState<VoteDuration>("24");
   const directMode = responseMode === "direct";
   const selectedDuration = voteDurationOptions.find((option) => option.value === voteDuration) || voteDurationOptions[3];
@@ -68,12 +73,37 @@ export function CaseCreateForm({
   }
 
   function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
-    const selectedFiles = Array.from(event.target.files || []).slice(0, 3);
-    if (event.target.files && event.target.files.length > 3) {
-      const dataTransfer = new DataTransfer();
-      selectedFiles.forEach((file) => dataTransfer.items.add(file));
-      event.target.files = dataTransfer.files;
+    const selectedFiles = Array.from(event.target.files || []);
+
+    imagePreviews.forEach((preview) => URL.revokeObjectURL(preview));
+    setImagePreviews([]);
+
+    if (!selectedFiles.length) {
+      setImageError("");
+      return;
     }
+
+    if (selectedFiles.length > CASE_IMAGE_LIMIT) {
+      event.target.value = "";
+      setImageError("사건 사진은 최대 3장까지 첨부할 수 있어요.");
+      return;
+    }
+
+    const invalidType = selectedFiles.find((file) => !CASE_IMAGE_TYPES.has(file.type));
+    if (invalidType) {
+      event.target.value = "";
+      setImageError("JPG, PNG, WEBP, GIF 이미지만 첨부할 수 있어요.");
+      return;
+    }
+
+    const oversized = selectedFiles.find((file) => file.size > CASE_IMAGE_MAX_BYTES);
+    if (oversized) {
+      event.target.value = "";
+      setImageError("사진은 한 장당 최대 4MB까지 첨부할 수 있어요.");
+      return;
+    }
+
+    setImageError("");
     setImagePreviews(selectedFiles.map((file) => URL.createObjectURL(file)));
   }
 
@@ -110,6 +140,7 @@ export function CaseCreateForm({
           <p className="mt-1.5 text-[11px] font-bold leading-4 text-[#767986]">
             JPG, PNG, WEBP, GIF만 가능하며 한 장당 최대 4MB까지 올릴 수 있어요.
           </p>
+          {imageError ? <p className="mt-1.5 text-[11px] font-black text-[#F04411]">{imageError}</p> : null}
           {imagePreviews.length ? (
             <div className="mt-3 grid grid-cols-3 gap-2">
               {imagePreviews.map((preview, index) => (
@@ -256,7 +287,7 @@ export function CaseCreateForm({
         </section>
 
         <div className="ios-card p-3">
-          <p className="text-xs font-black text-neutral-950">연결된 커플 법정</p>
+          <p className="text-xs font-black text-neutral-950">연결된 커플 재판</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {coupleNames.map((name) => (
               <CategoryChip active key={name}>
@@ -272,8 +303,8 @@ export function CaseCreateForm({
       </form>
 
       {noticeMode ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 px-4 pb-[calc(18px+env(safe-area-inset-bottom))]">
-          <section className="w-full max-w-[398px] rounded-[18px] bg-white p-5 shadow-[0_22px_60px_rgba(0,0,0,0.22)]">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30 px-4 py-[calc(24px_+_env(safe-area-inset-bottom))]">
+          <section className="max-h-[calc(100dvh_-_48px_-_env(safe-area-inset-bottom))] w-full max-w-[398px] overflow-y-auto rounded-[18px] bg-white p-5 shadow-[0_22px_60px_rgba(0,0,0,0.22)]">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3">
                 <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#FFF2EC] text-[#FF3D00]">

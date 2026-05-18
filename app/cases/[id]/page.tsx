@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Clock, MessageSquareReply, ShieldAlert, UsersRound } from "lucide-react";
+import { Clock, MessageSquareReply, ShieldAlert, UsersRound } from "lucide-react";
+import { AppHeader } from "@/components/AppHeader";
 import { CaseComments } from "@/components/CaseComments";
 import { JuryVoteForm } from "@/components/JuryVoteForm";
 import { ReportModal } from "@/components/ReportModal";
@@ -9,7 +10,7 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { ViewCountIcon } from "@/components/ViewCountIcon";
 import { blockUser } from "@/lib/actions";
 import { requireUser } from "@/lib/auth";
-import { parseCaseImages } from "@/lib/case-images";
+import { getCaseImages } from "@/lib/case-images";
 import { NO_SENTENCE_VERDICTS } from "@/lib/constants";
 import { deadlineLabel } from "@/lib/format";
 import { getCaseDetail } from "@/lib/services";
@@ -47,21 +48,11 @@ export default async function CaseDetailPage({
   const isDefendant = caseItem.defendantId === user.id;
   const targetUser =
     caseItem.plaintiff.id === user.id ? caseItem.defendant : caseItem.plaintiff;
-  const caseImages = parseCaseImages(caseItem.caseImages);
+  const caseImages = getCaseImages(caseItem.caseImages, caseItem.category);
 
   return (
-    <div className="py-4">
-      <div className="grid min-h-10 grid-cols-[36px_1fr_36px] items-center gap-1.5">
-        <Link
-          href="/home"
-          className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-neutral-950"
-          aria-label="뒤로가기"
-        >
-          <ArrowLeft aria-hidden="true" size={20} strokeWidth={2.6} />
-        </Link>
-        <h1 className="text-center text-[18px] font-black text-neutral-950">사건 상세</h1>
-        <span />
-      </div>
+    <div>
+      <AppHeader title="사건 상세" backHref="/home" />
 
       <div className="mt-2 flex items-center justify-end gap-1.5">
           <ReportModal caseId={caseItem.id} targetUserId={targetUser?.id} />
@@ -96,28 +87,33 @@ export default async function CaseDetailPage({
           </span>
         </div>
         {caseImages.length ? (
-          <div className="mt-5 space-y-2">
-            <div className="relative h-[230px] overflow-hidden rounded-[18px] bg-[#FFF2EC]">
-              <Image
-                src={caseImages[0]}
-                alt={`${caseItem.title} 사건 사진 1`}
-                fill
-                sizes="(max-width: 430px) 100vw, 430px"
-                className="object-cover"
-              />
-            </div>
-            {caseImages.length > 1 ? (
-              <div className="grid grid-cols-2 gap-2">
-                {caseImages.slice(1).map((image, index) => (
-                  <div key={image} className="relative h-[118px] overflow-hidden rounded-[16px] bg-[#FFF2EC]">
+          <div className="mt-5">
+            <div className="overflow-hidden rounded-[16px] bg-[#FFF2EC]">
+              <div
+                className="flex snap-x snap-mandatory overflow-x-auto scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                aria-label="사건 사진"
+              >
+                {caseImages.map((image, index) => (
+                  <div key={image} className="relative aspect-square w-full shrink-0 snap-center">
                     <Image
                       src={image}
-                      alt={`${caseItem.title} 사건 사진 ${index + 2}`}
+                      alt={`${caseItem.title} 사건 사진 ${index + 1}`}
                       fill
-                      sizes="(max-width: 430px) 50vw, 210px"
+                      sizes="(max-width: 430px) 100vw, 430px"
+                      unoptimized={image.startsWith("/api/case-images/")}
                       className="object-cover"
                     />
                   </div>
+                ))}
+              </div>
+            </div>
+            {caseImages.length > 1 ? (
+              <div className="mt-2 flex justify-center gap-1.5" aria-hidden="true">
+                {caseImages.map((image, index) => (
+                  <span
+                    key={`${image}-dot`}
+                    className={index === 0 ? "h-1.5 w-3 rounded-full bg-[#FF3D00]" : "h-1.5 w-1.5 rounded-full bg-[#E5E7EB]"}
+                  />
                 ))}
               </div>
             ) : null}

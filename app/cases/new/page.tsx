@@ -21,13 +21,13 @@ export default async function NewCasePage({
 }: {
   searchParams?: Promise<{ error?: string }>;
 }) {
+  const params = await searchParams;
   const user = await requireUser();
   const couple = await getUserCouple(user.id);
   if (!couple || couple.status !== "CONNECTED") {
     redirect("/couple?from=case");
   }
 
-  const params = await searchParams;
   const error = params?.error ? errors[params.error] : null;
 
   return (

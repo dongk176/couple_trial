@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ChevronRight, Clock, Gavel, Hourglass, Info, Scale } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { requireUser } from "@/lib/auth";
-import { parseCaseImages } from "@/lib/case-images";
+import { getCaseImages } from "@/lib/case-images";
 import { formatAverageSentence } from "@/lib/format";
 import { getActivity } from "@/lib/services";
 
@@ -53,7 +53,14 @@ function ActivityCaseImage({ image, title }: { image?: string; title: string }) 
   return (
     <div className="relative h-[70px] w-[86px] shrink-0 overflow-hidden rounded-[14px] bg-[#FFF2EC]">
       {image ? (
-        <Image src={image} alt={`${title} 사건 사진`} fill sizes="86px" className="object-cover" />
+        <Image
+          src={image}
+          alt={`${title} 사건 사진`}
+          fill
+          sizes="86px"
+          unoptimized={image.startsWith("/api/case-images/")}
+          className="object-cover"
+        />
       ) : (
         <div className="flex h-full w-full items-center justify-center text-[#FF3D00]">
           <Scale aria-hidden="true" size={28} strokeWidth={2.4} />
@@ -145,7 +152,7 @@ export default async function ActivityPage() {
 
         <div className="space-y-1.5">
           {recentVotes.map((vote) => {
-            const image = parseCaseImages(vote.case.caseImages)[0];
+            const image = getCaseImages(vote.case.caseImages, vote.case.category)[0];
             const sentence = vote.case.verdict?.sentenceLabel || vote.sentenceLabel;
             return (
               <Link

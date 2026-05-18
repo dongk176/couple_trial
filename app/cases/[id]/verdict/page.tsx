@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, BadgeCheck, Sparkles, Users } from "lucide-react";
+import { BadgeCheck, Sparkles, Users } from "lucide-react";
+import { AppHeader } from "@/components/AppHeader";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { reflectVerdictToProfile } from "@/lib/actions";
 import { requireUser } from "@/lib/auth";
@@ -25,18 +25,8 @@ export default async function VerdictPage({
   const sentenceEntries = Object.entries(voteSummary.sentenceCounts).sort((a, b) => b[1] - a[1]);
 
   return (
-    <div className="py-4">
-      <div className="grid min-h-10 grid-cols-[36px_1fr_36px] items-center">
-        <Link
-          href={`/cases/${caseItem.id}`}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-neutral-950"
-          aria-label="뒤로가기"
-        >
-          <ArrowLeft aria-hidden="true" size={20} strokeWidth={2.6} />
-        </Link>
-        <h1 className="text-center text-[18px] font-black text-neutral-950">판결 결과</h1>
-        <span />
-      </div>
+    <div>
+      <AppHeader title="판결 결과" backHref={`/cases/${caseItem.id}`} />
 
       <section className="ios-card mt-4 p-4">
         <p className="text-xs font-black text-[#FF3D00]">사건</p>

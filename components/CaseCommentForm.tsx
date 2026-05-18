@@ -109,7 +109,7 @@ export function CaseCommentForm({
       <div
         ref={toastRef}
         className={[
-          "fixed bottom-6 left-1/2 z-50 w-[calc(100%-40px)] max-w-[360px] -translate-x-1/2 rounded-full px-5 py-3 text-center text-sm font-black shadow-[0_14px_34px_rgba(0,0,0,0.18)]",
+          "fixed bottom-[calc(96px_+_env(safe-area-inset-bottom))] left-1/2 z-50 w-[calc(100%_-_40px)] max-w-[360px] -translate-x-1/2 rounded-full px-5 py-3 text-center text-sm font-black shadow-[0_14px_34px_rgba(0,0,0,0.18)]",
           state.ok ? "bg-neutral-950 text-white" : "bg-[#FFF2EC] text-[#F04411]"
         ].join(" ")}
         hidden

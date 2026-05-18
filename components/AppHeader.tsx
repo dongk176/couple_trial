@@ -13,8 +13,9 @@ export function AppHeader({
   backHref?: string;
 }) {
   return (
-    <header className="sticky top-0 z-20 -mx-4 bg-white/90 px-4 pb-2 pt-3 backdrop-blur-xl sm:-mx-5 sm:px-5">
-      <div className="flex min-h-10 items-center justify-between">
+    <>
+      <header className="app-fixed-header fixed inset-x-0 top-0 z-50 mx-auto w-full max-w-[430px] bg-white/95 px-4 pb-2 pt-[calc(12px+env(safe-area-inset-top))] backdrop-blur-xl sm:px-5">
+        <div className="flex min-h-10 items-center justify-between">
         {backHref ? (
           <div className="grid min-h-10 flex-1 grid-cols-[32px_1fr_32px] items-center gap-1.5">
             <Link
@@ -45,7 +46,9 @@ export function AppHeader({
             </label>
           </div>
         )}
-      </div>
-    </header>
+        </div>
+      </header>
+      <div aria-hidden="true" className="h-[calc(60px+env(safe-area-inset-top))]" />
+    </>
   );
 }

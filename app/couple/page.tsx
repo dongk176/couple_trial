@@ -12,7 +12,7 @@ const errors: Record<string, string> = {
   already: "이미 커플 연결이 완료됐습니다.",
   invalid: "초대코드 또는 아이디를 확인하세요.",
   selfInvite: "내 초대코드는 상대방 계정에서 입력해야 합니다.",
-  targetConnected: "상대방은 이미 다른 커플 법정에 연결돼 있습니다."
+  targetConnected: "상대방은 이미 다른 커플 재판에 연결돼 있습니다."
 };
 
 export default async function CouplePage({
@@ -32,7 +32,7 @@ export default async function CouplePage({
       <AppHeader avatar={user.avatar} nickname={user.nickname} title="커플 연결" backHref="/home" />
 
       <section className="pt-3">
-        <h1 className="text-3xl font-black text-neutral-950">커플 법정</h1>
+        <h1 className="text-3xl font-black text-neutral-950">커플 재판</h1>
         <p className="mt-2 text-base leading-6 text-neutral-500">초대코드 또는 상대방 아이디로 연결하면 사건을 등록할 수 있습니다.</p>
       </section>
 
@@ -55,7 +55,7 @@ export default async function CouplePage({
               <HeartHandshake aria-hidden="true" size={25} />
             </div>
             <h2 className="mt-4 text-2xl font-black text-neutral-950">연결 완료</h2>
-            <p className="mt-2 text-sm leading-6 text-neutral-500">이 커플 법정에서 등록되는 사건은 모두 공개 피드에 올라갑니다.</p>
+            <p className="mt-2 text-sm leading-6 text-neutral-500">이 커플 재판에서 등록되는 사건은 모두 공개 피드에 올라갑니다.</p>
             <div className="mt-5 flex items-center gap-3 rounded-[16px] bg-neutral-50 p-4">
               <UserAvatar src={couple.userA.avatar} alt={`${couple.userA.nickname} 프로필`} />
               <div className="min-w-0 flex-1 text-center text-sm font-black text-neutral-400">연결</div>
@@ -73,7 +73,7 @@ export default async function CouplePage({
             </div>
           </section>
 
-          <div className="fixed inset-x-0 bottom-[92px] z-50 mx-auto w-full max-w-[430px] px-5">
+          <div className="fixed inset-x-0 bottom-[calc(92px_+_env(safe-area-inset-bottom))] z-50 mx-auto w-full max-w-[430px] px-5">
             <div className="rounded-[18px] border border-[#E8E8ED] bg-white/95 p-3 shadow-[0_18px_42px_rgba(0,0,0,0.16)] backdrop-blur-xl">
               <Link
                 href="/cases/new"

@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { ChevronRight, LogOut } from "lucide-react";
+import { Building2, ChevronRight, FileText, Headphones, LogOut, ShieldCheck } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { BadgeIcon } from "@/components/BadgeIcon";
 import { EmptyState } from "@/components/EmptyState";
-import { UserAvatar } from "@/components/UserAvatar";
+import { ProfileEditor } from "@/components/ProfileEditor";
 import { logout } from "@/lib/actions";
 import { requireUser } from "@/lib/auth";
 import { formatAverageSentence, formatDate, formatSentence } from "@/lib/format";
@@ -12,7 +12,7 @@ import { getProfile } from "@/lib/services";
 export default async function MePage({
   searchParams
 }: {
-  searchParams?: Promise<{ reflected?: string }>;
+  searchParams?: Promise<{ reflected?: string; profile?: string; profileError?: string }>;
 }) {
   const sessionUser = await requireUser();
   const params = await searchParams;
@@ -22,6 +22,14 @@ export default async function MePage({
   const activeRecord = records.find((record) => record.status === "ACTIVE");
   const juryTitle = stats.totalVotes >= 20 ? "수석 배심원" : stats.totalVotes >= 5 ? "정식 배심원" : "예비 배심원";
   const totalSentence = records.reduce((sum, record) => sum + (record.sentenceMonths >= 9999 ? 120 : record.sentenceMonths), 0);
+  const profileErrorMessage =
+    params?.profileError === "nickname"
+      ? "이름은 1~20자로 입력해주세요."
+      : params?.profileError === "avatar"
+        ? "프로필 사진은 JPG, PNG, WEBP, GIF 형식과 4MB 이하만 가능해요."
+        : params?.profileError === "upload"
+          ? "프로필 사진 저장소 설정을 확인해주세요."
+          : null;
 
   return (
     <div>
@@ -32,17 +40,18 @@ export default async function MePage({
           판결 결과가 프로필에 반영됐습니다.
         </div>
       ) : null}
+      {params?.profile === "updated" ? (
+        <div className="mt-3 rounded-[14px] border border-[#FFD6C8] bg-[#FFF2EC] px-3 py-2 text-xs font-bold text-[#F04411]">
+          프로필이 수정됐습니다.
+        </div>
+      ) : null}
+      {profileErrorMessage ? (
+        <div className="mt-3 rounded-[14px] border border-[#FFD6C8] bg-[#FFF2EC] px-3 py-2 text-xs font-bold text-[#F04411]">
+          {profileErrorMessage}
+        </div>
+      ) : null}
 
-      <section className="flex items-center gap-4 pt-5">
-        <div className="relative w-fit">
-          <UserAvatar src={user.avatar} alt={`${user.nickname} 프로필`} size="md" />
-          <span className="absolute right-0 top-0 h-3.5 w-3.5 rounded-full border-2 border-white bg-[#FF3D00]" />
-        </div>
-        <div>
-          <h1 className="text-[25px] font-black leading-none text-neutral-950">{user.nickname}</h1>
-          <p className="mt-2 text-sm font-semibold text-[#767986]">{juryTitle}</p>
-        </div>
-      </section>
+      <ProfileEditor user={{ nickname: user.nickname, avatar: user.avatar }} juryTitle={juryTitle} />
 
       <section className="ios-card mt-5 grid grid-cols-3 divide-x divide-[#E8E8ED] p-3 text-center">
         <div>
@@ -126,6 +135,47 @@ export default async function MePage({
           로그아웃
         </button>
       </form>
+
+      <section className="mt-5 space-y-2">
+        <h2 className="text-[15px] font-black text-neutral-950">앱 정보</h2>
+        <div className="ios-card overflow-hidden p-1">
+          <Link href="/privacy" className="flex min-h-11 items-center justify-between rounded-[14px] px-3 text-sm font-black text-neutral-900">
+            <span className="inline-flex items-center gap-2">
+              <ShieldCheck aria-hidden="true" size={16} className="text-[#FF3D00]" />
+              개인정보 처리방침
+            </span>
+            <ChevronRight aria-hidden="true" size={16} className="text-[#9A9CAA]" />
+          </Link>
+          <Link href="/terms" className="flex min-h-11 items-center justify-between rounded-[14px] px-3 text-sm font-black text-neutral-900">
+            <span className="inline-flex items-center gap-2">
+              <FileText aria-hidden="true" size={16} className="text-[#FF3D00]" />
+              서비스 이용약관
+            </span>
+            <ChevronRight aria-hidden="true" size={16} className="text-[#9A9CAA]" />
+          </Link>
+          <Link href="/support" className="flex min-h-11 items-center justify-between rounded-[14px] px-3 text-sm font-black text-neutral-900">
+            <span className="inline-flex items-center gap-2">
+              <Headphones aria-hidden="true" size={16} className="text-[#FF3D00]" />
+              고객지원
+            </span>
+            <ChevronRight aria-hidden="true" size={16} className="text-[#9A9CAA]" />
+          </Link>
+        </div>
+      </section>
+
+      <section className="mt-3 rounded-[16px] border border-[#ECECF1] bg-white p-4 text-[11px] font-semibold leading-5 text-[#666A75] shadow-sm">
+        <h2 className="flex items-center gap-1.5 text-[13px] font-black text-neutral-950">
+          <Building2 aria-hidden="true" size={15} className="text-[#FF3D00]" />
+          사업자 정보
+        </h2>
+        <dl className="mt-2 space-y-1">
+          <div className="flex gap-2"><dt className="w-20 shrink-0 text-[#8A8D98]">상호/대표</dt><dd>아티룸 / 김동민</dd></div>
+          <div className="flex gap-2"><dt className="w-20 shrink-0 text-[#8A8D98]">사업자번호</dt><dd>638-04-03590</dd></div>
+          <div className="flex gap-2"><dt className="w-20 shrink-0 text-[#8A8D98]">통신판매업</dt><dd>2025-서울마포-2971</dd></div>
+          <div className="flex gap-2"><dt className="w-20 shrink-0 text-[#8A8D98]">주소</dt><dd>서울특별시 마포구 성산로8길 40</dd></div>
+          <div className="flex gap-2"><dt className="w-20 shrink-0 text-[#8A8D98]">문의</dt><dd>support@coupletrial.com</dd></div>
+        </dl>
+      </section>
     </div>
   );
 }

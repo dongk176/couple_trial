@@ -1,4 +1,4 @@
-export const APP_NAME = "커플법정";
+export const APP_NAME = "커플재판";
 export const BRAND_COLOR = "#FF3D00";
 
 export const AVATAR_OPTIONS = [

@@ -12,6 +12,8 @@ datasource db {
 model User {
   id           String   @id @default(cuid())
   loginId      String   @unique
+  appleSub     String?  @unique
+  email        String?
   inviteCode   String?  @unique
   passwordHash String
   nickname     String

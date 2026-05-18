@@ -38,7 +38,7 @@ const steps: Array<{
   {
     id: "gender",
     title: "성별을 선택해주세요",
-    subtitle: "커플법정 경험을 더 정확하게 맞추기 위해 사용됩니다."
+    subtitle: "커플재판 경험을 더 정확하게 맞추기 위해 사용됩니다."
   },
   {
     id: "birthInfo",
@@ -270,7 +270,7 @@ export function SignupForm() {
           가입하고 시작
         </PrimaryButton>
         <p className="text-center text-[11px] font-semibold leading-4 text-[#8A8D98]">
-          가입하면 커플법정의{" "}
+          가입하면 커플재판의{" "}
           <Link href="/privacy" className="font-black text-[#FF3D00]">
             개인정보 처리방침
           </Link>
@@ -279,8 +279,8 @@ export function SignupForm() {
       </form>
 
       {currentStep ? (
-        <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/35 px-4 pb-4">
-          <div className="w-full max-w-[398px] rounded-[20px] border border-[#ECECF1] bg-white p-4 shadow-[0_18px_50px_rgba(17,17,17,0.18)]">
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/35 px-4 py-[calc(24px_+_env(safe-area-inset-bottom))]">
+          <div className="max-h-[calc(100dvh_-_48px_-_env(safe-area-inset-bottom))] w-full max-w-[398px] overflow-y-auto rounded-[20px] border border-[#ECECF1] bg-white p-4 shadow-[0_18px_50px_rgba(17,17,17,0.18)]">
             <div className="mb-3 flex items-center gap-1.5">
               {steps.map((step, index) => (
                 <span

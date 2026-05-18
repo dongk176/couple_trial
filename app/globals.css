@@ -28,14 +28,18 @@ html {
   background: var(--background);
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 body {
   margin: 0;
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
   background: var(--background);
   color: var(--foreground);
   font-family: "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont, "SF Pro Display",
@@ -93,6 +97,31 @@ fieldset {
 
 .brand-gradient {
   background: linear-gradient(135deg, #ff5a1f 0%, #ff3d00 52%, #ff2f00 100%);
+}
+
+
+.app-shell {
+  position: relative;
+  width: 100%;
+  overscroll-behavior: none;
+}
+
+.app-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  scroll-behavior: smooth;
+}
+
+.app-fixed-header,
+.app-bottom-nav {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
+.app-bottom-nav {
+  bottom: -1px;
+  isolation: isolate;
 }
 
 .soft-orange {
