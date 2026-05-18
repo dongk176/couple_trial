@@ -18,8 +18,8 @@ export default async function OnboardingPage() {
   ];
 
   return (
-    <div className="min-h-screen pb-40 pt-6">
-      <section className="relative min-h-[260px] overflow-visible">
+    <div className="min-h-screen overflow-x-hidden pb-40 pt-6">
+      <section className="relative min-h-[260px] overflow-hidden">
         <div className="flex items-center gap-2">
           <LogoMark size="md" />
           <h1 className="text-[26px] font-black leading-none text-neutral-950">커플법정</h1>
@@ -38,7 +38,7 @@ export default async function OnboardingPage() {
           width={260}
           height={260}
           priority
-          className="absolute -right-10 top-[70px] h-[210px] w-[210px] object-contain"
+          className="absolute right-[-22px] top-[70px] h-[210px] w-[210px] max-w-none object-contain"
         />
       </section>
 

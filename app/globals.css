@@ -26,10 +26,16 @@
 
 html {
   background: var(--background);
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 body {
   margin: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
   background: var(--background);
   color: var(--foreground);
   font-family: "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont, "SF Pro Display",
@@ -49,6 +55,17 @@ select {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+fieldset {
+  min-inline-size: 0;
 }
 
 .font-black {

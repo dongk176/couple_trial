@@ -23,8 +23,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang="ko">
       <body>
-        <div className="min-h-screen bg-white">
-          <main className="mx-auto min-h-screen w-full max-w-[430px] bg-white px-4 pb-7 sm:px-5">
+        <div className="min-h-screen overflow-x-hidden bg-white">
+          <main className="mx-auto min-h-screen w-full max-w-[430px] overflow-x-hidden bg-white px-4 pb-7 sm:px-5">
             <div className={user ? "pb-24" : ""}>{children}</div>
           </main>
           {user ? <BottomNav /> : null}

@@ -27,7 +27,7 @@ export default async function SignupPage({
   const error = params?.error ? errors[params.error] : null;
 
   return (
-    <div className="min-h-screen py-6">
+    <div className="min-h-screen overflow-x-hidden py-6">
       <div className="flex items-center justify-between">
         <BackButton href="/" />
         <Link href="/" className="inline-flex min-h-8 items-center gap-1.5 text-[20px] font-black text-neutral-950">
@@ -42,7 +42,7 @@ export default async function SignupPage({
         </div>
       ) : null}
 
-      <form action={signup} className="mt-5 space-y-3">
+      <form action={signup} className="mt-5 min-w-0 space-y-3">
         <div>
           <h1 className="text-[18px] font-black leading-tight text-neutral-950">계정 만들기</h1>
         </div>
@@ -76,9 +76,9 @@ export default async function SignupPage({
           required
         />
 
-        <fieldset>
+        <fieldset className="min-w-0 overflow-hidden">
           <legend className="text-[13px] font-black text-neutral-950">프로필 이미지 <span className="font-semibold text-[#767986]">(선택)</span></legend>
-          <div className="mt-2 flex gap-2.5 overflow-x-auto pb-1">
+          <div className="mt-2 flex max-w-full min-w-0 gap-2.5 overflow-x-auto overscroll-x-contain pb-1">
             <label className="relative flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-full border border-dashed border-[#B8BCC8] bg-white text-[#767986] shadow-sm">
               <input
                 className="sr-only"
