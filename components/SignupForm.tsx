@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Plus } from "lucide-react";
+import Link from "next/link";
+import { Check, Plus } from "lucide-react";
 import { FormInput } from "@/components/FormInput";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { signup } from "@/lib/actions";
@@ -84,7 +85,10 @@ function isValidStepValue(step: StepId, values: SignupValues) {
 
 export function SignupForm() {
   const formRef = useRef<HTMLFormElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [stepIndex, setStepIndex] = useState<number | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [selectedAvatar, setSelectedAvatar] = useState(AVATAR_OPTIONS[0]);
   const [values, setValues] = useState<SignupValues>({
     realName: "",
     gender: "",
@@ -94,6 +98,32 @@ export function SignupForm() {
   });
   const [stepError, setStepError] = useState("");
   const currentStep = stepIndex === null ? null : steps[stepIndex];
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    };
+  }, [avatarPreview]);
+
+  const selectUploadedAvatar = (file: File | undefined) => {
+    if (!file) return;
+    setSelectedAvatar("");
+    setAvatarPreview((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return URL.createObjectURL(file);
+    });
+  };
+
+  const selectDefaultAvatar = (avatar: string) => {
+    setSelectedAvatar(avatar);
+    setAvatarPreview((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return null;
+    });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const beginExtraSteps = () => {
     if (!formRef.current?.reportValidity()) return;
@@ -171,27 +201,47 @@ export function SignupForm() {
             프로필 이미지 <span className="font-semibold text-[#767986]">(선택)</span>
           </legend>
           <div className="mt-2 flex max-w-full min-w-0 gap-3 overflow-x-auto overscroll-x-contain pb-1">
-            <label className="relative flex h-16 w-16 shrink-0 cursor-pointer items-center justify-center rounded-full border border-dashed border-[#B8BCC8] bg-white text-[#767986] shadow-sm">
+            <label
+              className={`relative flex h-16 w-16 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border bg-white text-[#767986] shadow-sm ${
+                avatarPreview
+                  ? "border-[#FF3D00] ring-2 ring-[#FF3D00]/12"
+                  : "border-dashed border-[#B8BCC8]"
+              }`}
+            >
               <input
+                ref={fileInputRef}
                 className="sr-only"
                 type="file"
                 name="avatarUpload"
                 accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={(event) => selectUploadedAvatar(event.target.files?.[0])}
               />
-              <Plus aria-hidden="true" size={25} strokeWidth={2.4} />
+              {avatarPreview ? (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element -- local blob preview cannot be optimized by next/image. */}
+                  <img src={avatarPreview} alt="선택한 프로필 이미지" className="h-full w-full rounded-full object-cover" />
+                  <span className="absolute right-0.5 top-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#FF3D00] text-white shadow-sm">
+                    <Check aria-hidden="true" size={13} strokeWidth={3} />
+                  </span>
+                </>
+              ) : (
+                <Plus aria-hidden="true" size={25} strokeWidth={2.4} />
+              )}
             </label>
             {AVATAR_OPTIONS.map((avatar, index) => (
               <label
                 key={avatar}
-                className="relative flex h-16 w-16 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[#E8E8ED] bg-white shadow-sm has-[:checked]:border-[#FF3D00] has-[:checked]:ring-2 has-[:checked]:ring-[#FF3D00]/12"
+                className={`relative flex h-16 w-16 shrink-0 cursor-pointer items-center justify-center rounded-full border bg-white shadow-sm ${
+                  selectedAvatar === avatar ? "border-[#FF3D00] ring-2 ring-[#FF3D00]/12" : "border-[#E8E8ED]"
+                }`}
               >
                 <input
                   className="sr-only"
                   type="radio"
                   name="avatar"
                   value={avatar}
-                  defaultChecked={index === 0}
-                  required
+                  checked={selectedAvatar === avatar}
+                  onChange={() => selectDefaultAvatar(avatar)}
                 />
                 <Image
                   src={avatar}
@@ -200,6 +250,11 @@ export function SignupForm() {
                   height={64}
                   className="h-full w-full rounded-full object-cover"
                 />
+                {selectedAvatar === avatar ? (
+                  <span className="absolute right-0.5 top-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#FF3D00] text-white shadow-sm">
+                    <Check aria-hidden="true" size={13} strokeWidth={3} />
+                  </span>
+                ) : null}
               </label>
             ))}
           </div>
@@ -214,6 +269,13 @@ export function SignupForm() {
         <PrimaryButton type="button" onClick={beginExtraSteps} className="w-full !min-h-11 !rounded-[12px] !py-2.5 !text-sm">
           가입하고 시작
         </PrimaryButton>
+        <p className="text-center text-[11px] font-semibold leading-4 text-[#8A8D98]">
+          가입하면 커플법정의{" "}
+          <Link href="/privacy" className="font-black text-[#FF3D00]">
+            개인정보 처리방침
+          </Link>
+          에 동의한 것으로 봅니다.
+        </p>
       </form>
 
       {currentStep ? (
